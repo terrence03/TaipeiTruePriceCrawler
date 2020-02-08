@@ -139,7 +139,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
             i += 1
 
     finally:
-        print(Search_District+i+'爬取完成')
+        print(Search_District + ' ' + i + ' 爬取完成')
 
 
 def get_ColumnsData(bs):
