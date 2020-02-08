@@ -22,7 +22,6 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
     '''
     # 先輸入篩選條件
     try:
-        driver.set_page_load_timeout(20)
         driver.get(url)  # 連接到台北地政雲不動產價格資訊\買賣實價查詢網頁
 
         # 選行政區
@@ -138,7 +137,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
             i += 1
 
     finally:
-        driver.close()
+        
         print('爬取資料完成')
 
 
@@ -238,6 +237,7 @@ Search_District = '松山區'
 # 此程式是抓單一路段的資料，可以透過迴圈爬取其他路段的資料
 for i in tqdm(get_RoadList(Search_District)):
     crawler(district=Search_District, positioning_method='路段', road=i)
+    time.sleep(60)
 
 # 將爬下來的資料存入字典
 ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress_list,
@@ -251,6 +251,6 @@ ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress
 
 
 AllData = pd.DataFrame(ColumnsData)
-
+driver.quit()
 # %%
 # 輸出資料
