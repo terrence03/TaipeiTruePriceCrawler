@@ -30,7 +30,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
         for option in driver.find_elements_by_tag_name('option'):
             if option.text == district:
                 option.click()
-                time.sleep(1)
+                time.sleep(3)
                 break
 
         # 選定位方式
@@ -39,16 +39,18 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
         for option in driver.find_elements_by_tag_name('option'):
             if option.text == positioning_method:
                 option.click()
-                time.sleep(1)
+                time.sleep(3)
                 break
 
         # 選路段
+        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+            (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_GondRoad')))
         driver.find_element_by_id(
             'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_GondRoad').click()
         for option in driver.find_elements_by_tag_name('option'):
             if option.text == road:
                 option.click()
-                time.sleep(1)
+                time.sleep(3)
                 break
 
         # 選起始年
@@ -57,7 +59,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
         for option in driver.find_elements_by_tag_name('option'):
             if option.text == '101':
                 option.click()
-                time.sleep(1)
+                time.sleep(3)
                 break
 
         # 選起始月
@@ -66,7 +68,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
         for option in driver.find_elements_by_tag_name('option'):
             if option.text == '08':
                 option.click()
-                time.sleep(1)
+                time.sleep(3)
                 break
 
         # 預設的結束時間是資料的最新時間，所以不需設定
@@ -137,8 +139,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
             i += 1
 
     finally:
-        
-        print('爬取資料完成')
+        print(Search_District+i+'爬取完成')
 
 
 def get_ColumnsData(bs):
@@ -237,7 +238,7 @@ Search_District = '松山區'
 # 此程式是抓單一路段的資料，可以透過迴圈爬取其他路段的資料
 for i in tqdm(get_RoadList(Search_District)):
     crawler(district=Search_District, positioning_method='路段', road=i)
-    time.sleep(60)
+    time.sleep(30)
 
 # 將爬下來的資料存入字典
 ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress_list,
