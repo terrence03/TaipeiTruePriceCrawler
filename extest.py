@@ -25,3 +25,19 @@ def get_prize():
         counter += 1
     return prize
 # %%
+import pandas as pd
+
+RoadData = pd.read_excel('路段.xlsx')
+
+
+# %% 
+def get_RoadList(District):
+    RoadList = RoadData[District].dropna().tolist()
+    return RoadList
+
+# %%
+from tqdm import tqdm
+for i in tqdm(get_RoadList('松山區')):
+    print(i)
+
+# %%

@@ -5,6 +5,7 @@ from selenium.webdriver.support import expected_conditions
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 import time
 import pandas as pd
 import sqlite3
@@ -148,7 +149,6 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
         print('爬取資料完成')
 
 
-
 def get_ColumnsData(bs):
     # 讀取表格
     string = ''
@@ -209,6 +209,16 @@ def get_ColumnsData(bs):
 
         counter += 1
 
+
+def get_RoadList(District):
+    RoadList = RoadData[District].dropna().tolist()
+
+    return RoadList
+
+
+# 匯入路段名稱資料
+RoadData = pd.read_excel('路段.xlsx')
+
 # 爬蟲模型
 District_list = []  # 行政區
 Adress_list = []  # 土地位置或建物門牌
@@ -225,8 +235,18 @@ TransactionalType_list = []
 Note_list = []
 TransactionRecord_list = []
 
-crawler(district='松山區', positioning_method='路段', road='八德路二段')
+column = ['行政區', '土地位置或建物門牌', '交易日期', '交易總價(萬元)', '交易單價(萬元/坪)', '單價是否含車位', '建物移轉面積(坪)',
+          '土地移轉面積(坪)', '建物型態', '屋齡', '樓層別/總樓層', '交易種類', '備註事項', '歷次移轉(含過去移轉資料)']
 
+# 設定要搜尋的行政區
+Search_District = '松山區'
+
+# 開始爬蟲
+# 此程式是抓單一路段的資料，可以透過迴圈爬取其他路段的資料
+for i in tqdm(get_RoadList(Search_District)):
+    crawler(district=Search_District, positioning_method='路段', road=i)
+
+# 將爬下來的資料存入字典
 ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress_list,
                '交易日期': Date_list, '交易總價(萬元)': TotalPrice_list,
                '交易單價(萬元/坪)': UnitPrice_List, '單價是否含車位': Garage_list,
@@ -236,9 +256,8 @@ ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress
                '備註事項': Note_list, '歷次移轉(含過去移轉資料)': TransactionRecord_list
                }
 
+
 AllData = pd.DataFrame(ColumnsData)
-# 此程式是抓單一路段的資料，可以透過迴圈爬取其他路段的資料
 
 # %%
 # 輸出資料
-
