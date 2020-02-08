@@ -14,7 +14,7 @@ url = 'https://cloud.land.gov.taipei/ImmPrice/TruePriceA.aspx'  # 台北地政�
 # webdriver位置
 webdriver_path = 'C:\\Program Files\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe'
 driver = webdriver.PhantomJS(executable_path=webdriver_path)
-driver.implicitly_wait(60)
+driver.implicitly_wait(120)
 
 def crawler(district, positioning_method, road, transactional_type='房地(土地+建物)'):
     '''
@@ -119,8 +119,6 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
             next_page = i + 1
             if next_page == 11:  # 若下一頁為11，點擊'...'的按鈕
                 driver.find_element_by_link_text('...').click()
-                element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
-                    (By.LINK_TEXT, str(next_page+1))))  # 按下'...'的按鈕後會直接跳到11頁，所以等待12頁的連接出來
                 bs = BeautifulSoup(driver.page_source, 'html.parser')
                 get_ColumnsData(bs)
 
@@ -128,14 +126,10 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
             elif next_page in [21, 31, 41, 51, 61, 71, 81, 91, 101, 111, 121, 131, 141, 151]:
                 driver.find_element_by_xpath(
                     '//*[@id = "ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice"]/tbody/tr[1]/td/table/tbody/tr/td[13]/a').click()
-                element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
-                    (By.LINK_TEXT, str(next_page+1))))
                 bs = BeautifulSoup(driver.page_source, 'html.parser')
                 get_ColumnsData(bs)
 
             else:
-                element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
-                    (By.LINK_TEXT, str(next_page))))    # 正常等待下一頁的連接出現再點選
                 driver.find_element_by_link_text(
                     str(next_page)).click()  # 正常換頁              
                 bs = BeautifulSoup(driver.page_source, 'html.parser')
