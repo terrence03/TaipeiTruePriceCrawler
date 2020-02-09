@@ -12,9 +12,12 @@ import sqlite3
 
 url = 'https://cloud.land.gov.taipei/ImmPrice/TruePriceA.aspx'  # 台北地政雲網站
 # webdriver位置
-webdriver_path = 'C:\\Program Files\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe'
-driver = webdriver.PhantomJS(executable_path=webdriver_path)
+#webdriver_path = 'C:\\Program Files\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe'
+#driver = webdriver.PhantomJS(executable_path=webdriver_path)
+webdriver_path = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chromedriver.exe'
+driver = webdriver.Chrome(executable_path=webdriver_path)
 driver.implicitly_wait(120)
+
 
 def crawler(district, positioning_method, road, transactional_type='房地(土地+建物)'):
     '''
@@ -23,6 +26,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
     # 先輸入篩選條件
     try:
         driver.get(url)  # 連接到台北地政雲不動產價格資訊\買賣實價查詢網頁
+        driver.refresh()
 
         # 選行政區
         driver.find_element_by_id(
@@ -132,14 +136,16 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
 
             else:
                 driver.find_element_by_link_text(
-                    str(next_page)).click()  # 正常換頁              
+                    str(next_page)).click()  # 正常換頁
+                element = WebDriverWait(driver, 60).until_not(
+                    expected_conditions.presence_of_element_located((By.LINK_TEXT, str(next_page))))
                 bs = BeautifulSoup(driver.page_source, 'html.parser')
                 get_ColumnsData(bs)
 
             i += 1
 
     finally:
-        print(Search_District + ' ' + i + ' 爬取完成')
+        print(district + ' ' + road + ' 爬取完成')
 
 
 def get_ColumnsData(bs):
@@ -238,7 +244,7 @@ Search_District = '松山區'
 # 此程式是抓單一路段的資料，可以透過迴圈爬取其他路段的資料
 for i in tqdm(get_RoadList(Search_District)):
     crawler(district=Search_District, positioning_method='路段', road=i)
-    time.sleep(30)
+    # time.sleep(30)
 
 # 將爬下來的資料存入字典
 ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress_list,
