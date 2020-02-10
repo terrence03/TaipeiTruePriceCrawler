@@ -11,9 +11,11 @@ import pandas as pd
 import sqlite3
 
 url = 'https://cloud.land.gov.taipei/ImmPrice/TruePriceA.aspx'  # 台北地政雲網站
-# webdriver位置
+# webdriver位置(phantomjs)
 #webdriver_path = 'C:\\Program Files\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe'
 #driver = webdriver.PhantomJS(executable_path=webdriver_path)
+
+# webdriver位置(chromedriver)
 webdriver_path = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chromedriver.exe'
 driver = webdriver.Chrome(executable_path=webdriver_path)
 driver.implicitly_wait(120)
@@ -99,7 +101,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
 
         # 先翻到最末頁確認總頁數
         driver.find_element_by_link_text('最末頁').click()
-        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+        element = WebDriverWait(driver, 20).until(expected_conditions.presence_of_element_located(
             (By.LINK_TEXT, '第一頁')))
         bs = BeautifulSoup(driver.page_source, 'html.parser')
         table = bs.find(
@@ -110,7 +112,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
 
         # 回到第一頁
         driver.find_element_by_link_text('第一頁').click()
-        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+        element = WebDriverWait(driver, 20).until(expected_conditions.presence_of_element_located(
             (By.LINK_TEXT, '最末頁')))
 
         # 從第一頁開始儲存資料
@@ -124,6 +126,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
             next_page = i + 1
             if next_page == 11:  # 若下一頁為11，點擊'...'的按鈕
                 driver.find_element_by_link_text('...').click()
+                time.sleep(15)
                 bs = BeautifulSoup(driver.page_source, 'html.parser')
                 get_ColumnsData(bs)
 
@@ -131,6 +134,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
             elif next_page in [21, 31, 41, 51, 61, 71, 81, 91, 101, 111, 121, 131, 141, 151]:
                 driver.find_element_by_xpath(
                     '//*[@id = "ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice"]/tbody/tr[1]/td/table/tbody/tr/td[13]/a').click()
+                time.sleep(15)    
                 bs = BeautifulSoup(driver.page_source, 'html.parser')
                 get_ColumnsData(bs)
 
