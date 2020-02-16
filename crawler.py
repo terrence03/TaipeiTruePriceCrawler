@@ -38,7 +38,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
     for option in driver.find_elements_by_tag_name('option'):
         if option.text == district:
             option.click()
-            time.sleep(0.5)
+            time.sleep(1)
             break
 
     # 選定位方式
@@ -201,14 +201,14 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
 
                 i += 1    
 
+        print(district + ' ' + road + ' 爬取完成')
 
     except UnexpectedAlertPresentException:
         error_info = sys.exc_info()
         error_msg = re.findall('\{.*\}', str(error_info))[0]
         print(district + ' ' + road + ' 爬取遇到錯誤' + ' 錯誤訊息：' + error_msg)
     
-
-    print(district + ' ' + road + ' 爬取完成')
+   
 
 def get_ColumnsData(bs):
     # 讀取表格
