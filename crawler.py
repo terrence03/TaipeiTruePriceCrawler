@@ -104,7 +104,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
     4. 查無資料
     '''
     try:
-        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+        element = WebDriverWait(driver, 60).until(expected_conditions.presence_of_element_located(
                     (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice')))
         bs = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -121,13 +121,13 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
         elif re.search('最末頁', str(page_info)) != None:
             #print('有最末頁按鈕')
             # 等待第一頁資料出來
-            element = WebDriverWait(driver, 20).until(expected_conditions.presence_of_element_located(
+            element = WebDriverWait(driver, 60).until(expected_conditions.presence_of_element_located(
                 (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice')))
             bs = BeautifulSoup(driver.page_source, 'html.parser')
 
             # 先翻到最末頁確認總頁數
             driver.find_element_by_link_text('最末頁').click()
-            element = WebDriverWait(driver, 20).until(expected_conditions.presence_of_element_located(
+            element = WebDriverWait(driver, 60).until(expected_conditions.presence_of_element_located(
                 (By.LINK_TEXT, '第一頁')))
             bs = BeautifulSoup(driver.page_source, 'html.parser')
             table = bs.find(
@@ -138,8 +138,9 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
 
             # 回到第一頁
             driver.find_element_by_link_text('第一頁').click()
-            element = WebDriverWait(driver, 20).until(expected_conditions.presence_of_element_located(
+            element = WebDriverWait(driver, 60).until(expected_conditions.presence_of_element_located(
                 (By.LINK_TEXT, '最末頁')))
+            time.sleep(1)
             
             # 從第一頁開始儲存資料
             bs = BeautifulSoup(driver.page_source, 'html.parser')
@@ -151,8 +152,9 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
                 next_page = i + 1
                 if next_page == 11:  # 若下一頁為11，點擊'...'的按鈕
                     driver.find_element_by_link_text('...').click()
-                    element = WebDriverWait(driver, 20).until(expected_conditions.element_to_be_clickable(
+                    element = WebDriverWait(driver, 60).until(expected_conditions.element_to_be_clickable(
                         (By.LINK_TEXT, '第一頁')))
+                    time.sleep(1)
                     bs = BeautifulSoup(driver.page_source, 'html.parser')
                     get_ColumnsData(bs)
 
@@ -162,15 +164,16 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
                         '//*[@id = "ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice"]/tbody/tr[1]/td/table/tbody/tr/td[13]/a').click()
                     element = WebDriverWait(driver, 20).until_not(
                         expected_conditions.element_to_be_clickable((By.LINK_TEXT, str(next_page))))
-                    #time.sleep(15)    
+                    time.sleep(1)    
                     bs = BeautifulSoup(driver.page_source, 'html.parser')
                     get_ColumnsData(bs)
 
                 else:
                     driver.find_element_by_link_text(
                         str(next_page)).click()  # 正常換頁
-                    element = WebDriverWait(driver, 20).until(
+                    element = WebDriverWait(driver, 120).until(
                         expected_conditions.element_to_be_clickable((By.LINK_TEXT, str(next_page-1))))
+                    time.sleep(1)
                     bs = BeautifulSoup(driver.page_source, 'html.parser')
                     get_ColumnsData(bs)
 
@@ -194,8 +197,9 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
                 driver.find_element_by_link_text(
                     str(next_page)).click()  # 正常換頁
                 #time.sleep(10)
-                element = WebDriverWait(driver, 20).until(
+                element = WebDriverWait(driver, 60).until(
                     expected_conditions.element_to_be_clickable((By.LINK_TEXT, str(next_page-1))))
+                time.sleep(1)
                 bs = BeautifulSoup(driver.page_source, 'html.parser')
                 get_ColumnsData(bs)
 
@@ -300,14 +304,14 @@ column = ['行政區', '土地位置或建物門牌', '交易日期', '交易總
           '土地移轉面積(坪)', '建物型態', '屋齡', '樓層別/總樓層', '交易種類', '備註事項', '歷次移轉(含過去移轉資料)']
 
 # 設定要搜尋的行政區
-Search_District = '文山區'
+Search_District = '松山區'
 
 # 開始爬蟲
 # 此程式是抓單一路段的資料，可以透過迴圈爬取其他路段的資料
 for i in tqdm(get_RoadList(Search_District)):
     crawler(district=Search_District, positioning_method='路段', road=i)
-    time.sleep(5)
-#crawler(district=Search_District, positioning_method='路段', road='八德路二段')
+    time.sleep(1)
+#crawler(district=Search_District, positioning_method='路段', road='八德路三段')
 
 # 將爬下來的資料存入字典
 ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress_list,
@@ -325,3 +329,6 @@ driver.quit()
 # %%
 # 輸出資料
 AllData.to_excel('data.xlsx')
+
+
+# %%
