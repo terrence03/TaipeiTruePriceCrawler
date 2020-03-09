@@ -255,3 +255,4 @@ AllData = pd.DataFrame(ColumnsData)
 driver.quit()
 # %%
 # 輸出資料
+AllData.to_excel('data.xlsx')
