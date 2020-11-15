@@ -24,7 +24,7 @@ driver = webdriver.Chrome(executable_path=webdriver_path)
 driver.implicitly_wait(120)
 
 
-def crawler(district, positioning_method, road, transactional_type='房地(土地+建物)'):
+def crawler(district, positioning_method, road, transactional_type='房地+房地車'):  ###此處有更動###
     '''
     輸入選擇條件
     '''
@@ -52,9 +52,9 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
 
     # 選路段
     element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
-        (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_GondRoad')))
+        (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_txb_GondRoad')))  ###此處有更動###
     driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_GondRoad').click()
+        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_txb_GondRoad').click()  ###此處有更動###
     for option in driver.find_elements_by_tag_name('option'):
         if option.text == road:
             option.click()
@@ -109,7 +109,7 @@ def crawler(district, positioning_method, road, transactional_type='房地(土�
         bs = BeautifulSoup(driver.page_source, 'html.parser')
 
         table = bs.find(id='ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice')
-        page_info = table.find('td', {'colspan':'18'})
+        page_info = table.find('td', {'colspan':'19'})  ###此處有更動###
 
         # 狀況1 資料只有一頁
         if page_info == None:
@@ -304,14 +304,16 @@ column = ['行政區', '土地位置或建物門牌', '交易日期', '交易總
           '土地移轉面積(坪)', '建物型態', '屋齡', '樓層別/總樓層', '交易種類', '備註事項', '歷次移轉(含過去移轉資料)']
 
 # 設定要搜尋的行政區
-Search_District = '松山區'
+Search_District = '信義區'
 
 # 開始爬蟲
 # 此程式是抓單一路段的資料，可以透過迴圈爬取其他路段的資料
+'''
 for i in tqdm(get_RoadList(Search_District)):
     crawler(district=Search_District, positioning_method='路段', road=i)
     time.sleep(1)
-#crawler(district=Search_District, positioning_method='路段', road='八德路三段')
+'''
+crawler(district=Search_District, positioning_method='路段', road='和平東路三段')
 
 # 將爬下來的資料存入字典
 ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress_list,
