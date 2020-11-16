@@ -1,6 +1,7 @@
 # %%
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import UnexpectedAlertPresentException
@@ -24,7 +25,7 @@ driver = webdriver.Chrome(executable_path=webdriver_path)
 driver.implicitly_wait(120)
 
 
-def crawler(district, positioning_method, road, transactional_type='房地+房地車'):  ###此處有更動###
+def crawler(district, positioning_method, road, start_year, start_month, end_year, end_month, transactional_type='房地+房地車'):  ###此處有更動###
     '''
     輸入選擇條件
     '''
@@ -62,10 +63,41 @@ def crawler(district, positioning_method, road, transactional_type='房地+房�
             break
                 
     # 選起始年
+    select = Select(driver.find_element_by_id(
+        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartYear'))
+    select.select_by_value(str(start_year))
+    time.sleep(0.5)
+    
+    # 選起始月
+    select = Select(driver.find_element_by_id(
+        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartMonth'))
+    select.select_by_value(str(start_month).zfill(2))
+    time.sleep(0.5)
+
+    # 選截止年
+    select = Select(driver.find_element_by_id(
+        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndYear'))
+    select.select_by_value(str(end_year))
+    time.sleep(0.5)
+    
+    # 選截止月
+    select = Select(driver.find_element_by_id(
+        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndMonth'))
+    select.select_by_value(str(end_month).zfill(2))
+    time.sleep(0.5)
+
+    '''
+    # 選起始年月和截止年月產生問題
+    # 由於原來的選擇方式在選起始年月時是先點開下拉選單後選擇選項
+    # 在選截止年月時的選擇會覆蓋回起始年月，因為選項種類一致
+    # 這是因為option選項沒有經過定位造成的
+    # 所以改用上面的寫法
+     
+    # 選起始年    
     driver.find_element_by_id(
         'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartYear').click()
     for option in driver.find_elements_by_tag_name('option'):
-        if option.text == '101':
+        if option.text == str(start_year):  ###此處有更動###
             option.click()
             time.sleep(0.5)
             break
@@ -74,13 +106,29 @@ def crawler(district, positioning_method, road, transactional_type='房地+房�
     driver.find_element_by_id(
         'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartMonth').click()
     for option in driver.find_elements_by_tag_name('option'):
-        if option.text == '08':
+        if option.text == str(start_month).zfill(2):  ###此處有更動###
             option.click()
             time.sleep(0.5)
             break
-
-    # 預設的結束時間是資料的最新時間，所以不需設定
-
+    
+    # 選截止年
+    driver.find_element_by_id(
+        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndYear').click()
+    for option in driver.find_elements_by_tag_name('option'):
+        if option.text == str(end_year):
+            option.click()
+            time.sleep(1)
+            break
+ 
+    # 選截止月
+    driver.find_element_by_id(
+        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndMonth').click()
+    for option in driver.find_elements_by_tag_name('option'):
+        if option.text == str(end_month).zfill(2):
+            option.click()
+            time.sleep(1)
+            break
+    '''        
     # 選交易類型
     driver.find_element_by_id(
         'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionType').click()
@@ -205,12 +253,13 @@ def crawler(district, positioning_method, road, transactional_type='房地+房�
 
                 i += 1    
 
-        print(district + ' ' + road + ' 爬取完成')
+        print('%s %6s 資料爬取完成' % (district,  road))
 
     except UnexpectedAlertPresentException:
         error_info = sys.exc_info()
         error_msg = re.findall('\{.*\}', str(error_info))[0]
-        print(district + ' ' + road + ' 爬取遇到錯誤' + ' 錯誤訊息：' + error_msg)
+        print('%s %6s 爬取遇到錯誤/錯誤訊息: %s' % (district, road, error_msg))
+        # print(district + ' ' + road + ' 爬取遇到錯誤' + ' 錯誤訊息：' + error_msg)
     
    
 
@@ -304,16 +353,33 @@ column = ['行政區', '土地位置或建物門牌', '交易日期', '交易總
           '土地移轉面積(坪)', '建物型態', '屋齡', '樓層別/總樓層', '交易種類', '備註事項', '歷次移轉(含過去移轉資料)']
 
 # 設定要搜尋的行政區
+District_List = ['松山區','大安區','中正區','萬華區','大同區','中山區','文山區','南港區','內湖區','士林區','北投區','信義區']
 Search_District = '信義區'
 
 # 開始爬蟲
+
+# 測試用
+# crawler(district=Search_District, positioning_method='路段', road='和平東路三段', start_year=109, start_month=7, end_year=109, end_month=9)
+
+
 # 此程式是抓單一路段的資料，可以透過迴圈爬取其他路段的資料
 '''
 for i in tqdm(get_RoadList(Search_District)):
-    crawler(district=Search_District, positioning_method='路段', road=i)
+    crawler(district=Search_District, positioning_method='路段', road=i,
+            start_year=108, start_month=8, end_year=109, end_month=9)
     time.sleep(1)
 '''
-crawler(district=Search_District, positioning_method='路段', road='和平東路三段')
+
+# 依時間範圍爬取臺北市全區資料
+def Clawler_by_Time(sy, sm, ey, em):
+    for district in tqdm(District_List):
+        for r in (get_RoadList(district)):
+            crawler(district=district, positioning_method='路段', road=r,
+                    start_year=sy, start_month=sm, end_year=ey, end_month=em)
+            time.sleep(1)
+    print('全部資料爬取完成')
+
+Clawler_by_Time(109, 8, 109, 9)
 
 # 將爬下來的資料存入字典
 ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress_list,
@@ -328,6 +394,12 @@ ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress
 
 AllData = pd.DataFrame(ColumnsData)
 driver.quit()
+
+
 # %%
 # 輸出資料
 AllData.to_excel('data.xlsx')
+
+# %%
+print(str(7).zfill(2))
+# %%
