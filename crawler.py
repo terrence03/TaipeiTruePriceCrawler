@@ -372,6 +372,12 @@ for i in tqdm(get_RoadList(Search_District)):
 
 # 依時間範圍爬取臺北市全區資料
 def Clawler_by_Time(sy, sm, ey, em):
+    '''
+    sy: 起始年
+    sm: 起始月
+    ey: 截止年
+    em: 截止月
+    '''
     for district in tqdm(District_List):
         for r in (get_RoadList(district)):
             crawler(district=district, positioning_method='路段', road=r,
