@@ -400,4 +400,5 @@ driver.quit()
 
 # %%
 # 輸出資料
-AllData.to_excel('data.xlsx', encoding='cp950', index=False)
+AllData.to_excel('AllData.xlsx', encoding='cp950', index=False)
+ErrorData.to_excel('ErrorData.xlsx', encoding='cp950', index=False)
