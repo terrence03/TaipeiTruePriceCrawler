@@ -309,7 +309,6 @@ RoadData = pd.read_excel('路段.xlsx')
 
 def get_RoadList(District):
     RoadList = RoadData[District].dropna().tolist()
-
     return RoadList
 
 
@@ -341,13 +340,7 @@ District_List = ['松山區', '大安區', '中正區', '萬華區', '大同區'
 # 選擇爬蟲方式
 # 依行政區與時間範圍爬取該區全路段資料
 def Clawler_by_District_and_Time(select_District, select_StartYear, select_StartMonth, select_EndYear, select_EndMonth):
-    '''
-    select_District: 行政區
-    select_StartYear: 起始年
-    select_StartMonth: 起始月
-    select_EndYear: 截止年
-    select_EndMonth: 截止月
-    '''
+
     for i in tqdm_notebook(get_RoadList(select_District)):
         crawler(district=select_District, positioning_method='路段', road=i,
                 start_year=select_StartYear, start_month=select_StartMonth, end_year=select_EndYear, end_month=select_EndMonth)
@@ -357,12 +350,7 @@ def Clawler_by_District_and_Time(select_District, select_StartYear, select_Start
 
 # 依時間範圍爬取臺北市全行政區資料
 def Clawler_by_Time(select_StartYear, select_StartMonth, select_EndYear, select_EndMonth):
-    '''
-    select_StartYear: 起始年
-    select_StartMonth: 起始月
-    select_EndYear: 截止年
-    select_EndMonth: 截止月
-    '''
+
     for district in tqdm_notebook(District_List, desc='全區進度'):
         for r in tqdm_notebook(get_RoadList(district), desc='當區進度'):
             crawler(district=district, positioning_method='路段', road=r,
