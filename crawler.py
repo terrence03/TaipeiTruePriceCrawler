@@ -1,4 +1,5 @@
 # %%
+from logging import fatal
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.ui import Select
@@ -7,7 +8,7 @@ from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import UnexpectedAlertPresentException
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-from tqdm import tqdm
+from tqdm import tqdm_notebook
 import time
 import pandas as pd
 import traceback
@@ -25,149 +26,115 @@ driver = webdriver.Chrome(executable_path=webdriver_path)
 driver.implicitly_wait(120)
 
 
-def crawler(district, positioning_method, road, start_year, start_month, end_year, end_month, transactional_type='房地+房地車'):  ###此處有更動###
-    '''
-    輸入選擇條件
-    '''
-    # 先輸入篩選條件
-    driver.get(url)  # 連接到台北地政雲不動產價格資訊\買賣實價查詢網頁
-    #driver.refresh()
-
-    # 選行政區
-    driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_MasterGond').click()
-    for option in driver.find_elements_by_tag_name('option'):
-        if option.text == district:
-            option.click()
-            time.sleep(1)
-            break
-
-    # 選定位方式
-    driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_locate').click()
-    for option in driver.find_elements_by_tag_name('option'):
-        if option.text == positioning_method:
-            option.click()
-            time.sleep(1)
-            break
-
-    # 選路段
-    element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
-        (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_txb_GondRoad')))  ###此處有更動###
-    driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_txb_GondRoad').click()  ###此處有更動###
-    for option in driver.find_elements_by_tag_name('option'):
-        if option.text == road:
-            option.click()
-            time.sleep(0.5)
-            break
-                
-    # 選起始年
-    select = Select(driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartYear'))
-    select.select_by_value(str(start_year))
-    time.sleep(0.5)
-    
-    # 選起始月
-    select = Select(driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartMonth'))
-    select.select_by_value(str(start_month).zfill(2))
-    time.sleep(0.5)
-
-    # 選截止年
-    select = Select(driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndYear'))
-    select.select_by_value(str(end_year))
-    time.sleep(0.5)
-    
-    # 選截止月
-    select = Select(driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndMonth'))
-    select.select_by_value(str(end_month).zfill(2))
-    time.sleep(0.5)
-
-    '''
-    # 選起始年月和截止年月產生問題
-    # 由於原來的選擇方式在選起始年月時是先點開下拉選單後選擇選項
-    # 在選截止年月時的選擇會覆蓋回起始年月，因為選項種類一致
-    # 這是因為option選項沒有經過定位造成的
-    # 所以改用上面的寫法
-     
-    # 選起始年    
-    driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartYear').click()
-    for option in driver.find_elements_by_tag_name('option'):
-        if option.text == str(start_year):  ###此處有更動###
-            option.click()
-            time.sleep(0.5)
-            break
-    
-    # 選起始月
-    driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartMonth').click()
-    for option in driver.find_elements_by_tag_name('option'):
-        if option.text == str(start_month).zfill(2):  ###此處有更動###
-            option.click()
-            time.sleep(0.5)
-            break
-    
-    # 選截止年
-    driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndYear').click()
-    for option in driver.find_elements_by_tag_name('option'):
-        if option.text == str(end_year):
-            option.click()
-            time.sleep(1)
-            break
- 
-    # 選截止月
-    driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndMonth').click()
-    for option in driver.find_elements_by_tag_name('option'):
-        if option.text == str(end_month).zfill(2):
-            option.click()
-            time.sleep(1)
-            break
-    '''        
-    # 選交易類型
-    driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionType').click()
-    for option in driver.find_elements_by_tag_name('option'):
-        if option.text == transactional_type:
-            option.click()
-            time.sleep(0.5)
-            break
-
-    # 點選查詢
-    element = driver.find_element_by_id(
-        'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_btn_Search').click()
-
-
-
-    '''
-    開始爬資料，這裡會有幾種情況
-    1. 資料只有一頁
-    2. 資料有很多頁（超過10頁）
-    3. 資料不超過10頁
-    4. 查無資料
-    '''
+def crawler(district, positioning_method, road, start_year, start_month, end_year, end_month, transactional_type='房地+房地車'):  # 此處有更動###
     try:
+        # 先輸入篩選條件
+        driver.get(url)  # 連接到台北地政雲不動產價格資訊\買賣實價查詢網頁
+        # driver.refresh()
+
+        # 選行政區
+        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+            (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_MasterGond')))
+        driver.find_element_by_id(
+            'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_MasterGond').click()
+        for option in driver.find_elements_by_tag_name('option'):
+            if option.text == district:
+                option.click()
+                time.sleep(1)
+                break
+
+        # 選定位方式
+        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+            (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_locate')))
+        driver.find_element_by_id(
+            'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_locate').click()
+        for option in driver.find_elements_by_tag_name('option'):
+            if option.text == positioning_method:
+                option.click()
+                time.sleep(1)
+                break
+
+        # 選路段
+        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+            (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_txb_GondRoad')))
+        driver.find_element_by_id(
+            'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_txb_GondRoad').click()
+        for option in driver.find_elements_by_tag_name('option'):
+            if option.text == road:
+                option.click()
+                time.sleep(0.5)
+                break
+
+        # 選起始年
+        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+            (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartYear')))  # 此處有更動###
+        select = Select(driver.find_element_by_id(
+            'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartYear'))
+        select.select_by_value(str(start_year))
+        time.sleep(0.5)
+
+        # 選起始月
+        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+            (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartMonth')))  # 此處有更動###
+        select = Select(driver.find_element_by_id(
+            'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionStartMonth'))
+        select.select_by_value(str(start_month).zfill(2))
+        time.sleep(0.5)
+
+        # 選截止年
+        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+            (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndYear')))  # 此處有更動###
+        select = Select(driver.find_element_by_id(
+            'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndYear'))
+        select.select_by_value(str(end_year))
+        time.sleep(0.5)
+
+        # 選截止月
+        element = WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located(
+            (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndMonth')))  # 此處有更動###
+        select = Select(driver.find_element_by_id(
+            'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionEndMonth'))
+        select.select_by_value(str(end_month).zfill(2))
+        time.sleep(0.5)
+
+        # 選交易類型
+        driver.find_element_by_id(
+            'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_ddl_TransactionType').click()
+        for option in driver.find_elements_by_tag_name('option'):
+            if option.text == transactional_type:
+                option.click()
+                time.sleep(0.5)
+                break
+
+        # 點選查詢
+        element = driver.find_element_by_id(
+            'ContentPlaceHolder1_ContentPlaceHolder1_TruePriceSearch_btn_Search').click()
+
+        '''
+        開始爬資料，這裡會有幾種情況
+        1. 資料只有一頁
+        2. 資料有很多頁（超過10頁）
+        3. 資料不超過10頁
+        4. 查無資料
+        '''
+
         element = WebDriverWait(driver, 60).until(expected_conditions.presence_of_element_located(
-                    (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice')))
+            (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice')))
         bs = BeautifulSoup(driver.page_source, 'html.parser')
 
-        table = bs.find(id='ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice')
-        page_info = table.find('td', {'colspan':'19'})  ###此處有更動###
+        table = bs.find(
+            id='ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice')
+        page_info = table.find('td', {'colspan': '19'})  # 此處有更動###
 
         # 狀況1 資料只有一頁
         if page_info == None:
-            #print('只有一頁')
+            # print('只有一頁')
             bs = BeautifulSoup(driver.page_source, 'html.parser')
             get_ColumnsData(bs)
 
         # 狀況2 資料有很多頁（超過10頁）
         elif re.search('最末頁', str(page_info)) != None:
-            #print('有最末頁按鈕')
+            # print('有最末頁按鈕')
             # 等待第一頁資料出來
             element = WebDriverWait(driver, 60).until(expected_conditions.presence_of_element_located(
                 (By.ID, 'ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice')))
@@ -189,11 +156,11 @@ def crawler(district, positioning_method, road, start_year, start_month, end_yea
             element = WebDriverWait(driver, 60).until(expected_conditions.presence_of_element_located(
                 (By.LINK_TEXT, '最末頁')))
             time.sleep(1)
-            
+
             # 從第一頁開始儲存資料
             bs = BeautifulSoup(driver.page_source, 'html.parser')
             get_ColumnsData(bs)
-            
+
             # 翻頁繼續儲存資料
             now_page = i = 1
             while i <= last_page-1:
@@ -212,7 +179,7 @@ def crawler(district, positioning_method, road, start_year, start_month, end_yea
                         '//*[@id = "ContentPlaceHolder1_ContentPlaceHolder1_gvTruePrice_A_gv_TruePrice"]/tbody/tr[1]/td/table/tbody/tr/td[13]/a').click()
                     element = WebDriverWait(driver, 20).until_not(
                         expected_conditions.element_to_be_clickable((By.LINK_TEXT, str(next_page))))
-                    time.sleep(1)    
+                    time.sleep(1)
                     bs = BeautifulSoup(driver.page_source, 'html.parser')
                     get_ColumnsData(bs)
 
@@ -229,11 +196,11 @@ def crawler(district, positioning_method, road, start_year, start_month, end_yea
 
         # 狀況3 資料不超過10頁
         elif re.search('最末頁', str(page_info)) == None:
-            #print('無最末頁按鈕')
+            # print('無最末頁按鈕')
             for row in table.find('td'):
                 last_page = int([s for s in row.stripped_strings][-1])
                 # print(last_page)
-            
+
             # 從第一頁開始儲存資料
             bs = BeautifulSoup(driver.page_source, 'html.parser')
             get_ColumnsData(bs)
@@ -244,24 +211,30 @@ def crawler(district, positioning_method, road, start_year, start_month, end_yea
                 next_page = i + 1
                 driver.find_element_by_link_text(
                     str(next_page)).click()  # 正常換頁
-                #time.sleep(10)
+                # time.sleep(10)
                 element = WebDriverWait(driver, 60).until(
                     expected_conditions.element_to_be_clickable((By.LINK_TEXT, str(next_page-1))))
                 time.sleep(1)
                 bs = BeautifulSoup(driver.page_source, 'html.parser')
                 get_ColumnsData(bs)
 
-                i += 1    
+                i += 1
 
-        print('%s %6s 資料爬取完成' % (district,  road))
+        print(f'{district} {road:{chr(12288)}<6} 爬取成功')
+
+    # 可能遭遇的錯誤類型
+    except StaleElementReferenceException:
+        error_msg = '頁面缺少可選取目標'
+        print(f'{district} {road:{chr(12288)}<6} 爬取失敗 錯誤訊息: {error_msg}')
+        get_ErrorList(district, road, error_msg)
 
     except UnexpectedAlertPresentException:
-        error_info = sys.exc_info()
-        error_msg = re.findall('\{.*\}', str(error_info))[0]
-        print('%s %6s 爬取遇到錯誤/錯誤訊息: %s' % (district, road, error_msg))
-        # print(district + ' ' + road + ' 爬取遇到錯誤' + ' 錯誤訊息：' + error_msg)
-    
-   
+        # error_info = sys.exc_info()
+        # error_msg = re.findall('\{.*\}', str(error_info))[0]
+        error_msg = '查無資料'
+        print(f'{district} {road:{chr(12288)}<6} 爬取失敗 錯誤訊息: {error_msg}')
+        get_ErrorList(district, road, error_msg)
+
 
 def get_ColumnsData(bs):
     # 讀取表格
@@ -323,6 +296,16 @@ def get_ColumnsData(bs):
 
         counter += 1
 
+# 保留錯誤資料
+def get_ErrorList(error_district, error_road, error_msg):
+    ErrorList_district.append(error_district)
+    ErrorList_road.append(error_road)
+    ErrorList_msg.append[error_msg]
+
+
+# 匯入路段名稱資料
+RoadData = pd.read_excel('路段.xlsx')
+
 
 def get_RoadList(District):
     RoadList = RoadData[District].dropna().tolist()
@@ -330,82 +313,91 @@ def get_RoadList(District):
     return RoadList
 
 
-# 匯入路段名稱資料
-RoadData = pd.read_excel('路段.xlsx')
-
 # 爬蟲模型
-District_list = []  # 行政區
-Adress_list = []  # 土地位置或建物門牌
-Date_list = []  # 交易日期
-TotalPrice_list = []
-UnitPrice_List = []
-Garage_list = []
-BuildingArea_list = []
-LandArea_list = []
-BuildingType_list = []
-HouseAge_list = []
-Floor_list = []
-TransactionalType_list = []
-Note_list = []
-TransactionRecord_list = []
+District_list = []            # 行政區
+Adress_list = []              # 土地位置或建物門牌
+Date_list = []                # 交易日期
+TotalPrice_list = []          # 交易總價
+UnitPrice_List = []           # 交易單價
+Garage_list = []              # 單價是否含車位
+BuildingArea_list = []        # 建物移轉面積
+LandArea_list = []            # 土地移轉面積
+BuildingType_list = []        # 建物型態
+HouseAge_list = []            # 屋齡
+Floor_list = []               # 樓層別/總樓層
+TransactionalType_list = []   # 交易種類
+Note_list = []                # 備註事項
+TransactionRecord_list = []   # 歷次移轉
 
-column = ['行政區', '土地位置或建物門牌', '交易日期', '交易總價(萬元)', '交易單價(萬元/坪)', '單價是否含車位', '建物移轉面積(坪)',
-          '土地移轉面積(坪)', '建物型態', '屋齡', '樓層別/總樓層', '交易種類', '備註事項', '歷次移轉(含過去移轉資料)']
+# 錯誤列表
+ErrorList_district = []
+ErrorList_road = []
+ErrorList_msg = []
 
-# 設定要搜尋的行政區
-District_List = ['松山區','大安區','中正區','萬華區','大同區','中山區','文山區','南港區','內湖區','士林區','北投區','信義區']
-Search_District = '信義區'
+District_List = ['松山區', '大安區', '中正區', '萬華區', '大同區',
+                 '中山區', '文山區', '南港區', '內湖區', '士林區', '北投區', '信義區']
 
-# 開始爬蟲
+
+# 選擇爬蟲方式
+# 依行政區與時間範圍爬取該區全路段資料
+def Clawler_by_District_and_Time(select_District, select_StartYear, select_StartMonth, select_EndYear, select_EndMonth):
+    '''
+    select_District: 行政區
+    select_StartYear: 起始年
+    select_StartMonth: 起始月
+    select_EndYear: 截止年
+    select_EndMonth: 截止月
+    '''
+    for i in tqdm_notebook(get_RoadList(select_District)):
+        crawler(district=select_District, positioning_method='路段', road=i,
+                start_year=select_StartYear, start_month=select_StartMonth, end_year=select_EndYear, end_month=select_EndMonth)
+        time.sleep(1)
+    print('爬取結束')
+
+
+# 依時間範圍爬取臺北市全行政區資料
+def Clawler_by_Time(select_StartYear, select_StartMonth, select_EndYear, select_EndMonth):
+    '''
+    select_StartYear: 起始年
+    select_StartMonth: 起始月
+    select_EndYear: 截止年
+    select_EndMonth: 截止月
+    '''
+    for district in tqdm_notebook(District_List, desc='全區進度'):
+        for r in tqdm_notebook(get_RoadList(district), desc='當區進度'):
+            crawler(district=district, positioning_method='路段', road=r,
+                    start_year=select_StartYear, start_month=select_StartMonth, end_year=select_EndYear, end_month=select_EndMonth)
+            time.sleep(1)
+    print('爬取結束')
+
 
 # 測試用
-# crawler(district=Search_District, positioning_method='路段', road='和平東路三段', start_year=109, start_month=7, end_year=109, end_month=9)
+# crawler(district='松山區', positioning_method='路段', road='東寧路', start_year=109, start_month=8, end_year=109, end_month=9)
 
 
-# 此程式是抓單一路段的資料，可以透過迴圈爬取其他路段的資料
-'''
-for i in tqdm(get_RoadList(Search_District)):
-    crawler(district=Search_District, positioning_method='路段', road=i,
-            start_year=108, start_month=8, end_year=109, end_month=9)
-    time.sleep(1)
-'''
-
-# 依時間範圍爬取臺北市全區資料
-def Clawler_by_Time(sy, sm, ey, em):
-    '''
-    sy: 起始年
-    sm: 起始月
-    ey: 截止年
-    em: 截止月
-    '''
-    for district in tqdm(District_List):
-        for r in (get_RoadList(district)):
-            crawler(district=district, positioning_method='路段', road=r,
-                    start_year=sy, start_month=sm, end_year=ey, end_month=em)
-            time.sleep(1)
-    print('全部資料爬取完成')
-
-Clawler_by_Time(109, 8, 109, 9)
+# Clawler_by_District_and_Time('松山區', 109, 8, 109, 9)
+Clawler_by_Time(106, 1, 108, 12)
 
 # 將爬下來的資料存入字典
-ColumnsData = {'行政區': District_list, '土地位置或建物門牌': Adress_list,
-               '交易日期': Date_list, '交易總價(萬元)': TotalPrice_list,
-               '交易單價(萬元/坪)': UnitPrice_List, '單價是否含車位': Garage_list,
-               '建物移轉面積(坪)': BuildingArea_list, '土地移轉面積(坪)': LandArea_list,
-               '建物型態': BuildingType_list, '屋齡': HouseAge_list,
-               '樓層別/總樓層': Floor_list, '交易種類': TransactionalType_list,
-               '備註事項': Note_list, '歷次移轉(含過去移轉資料)': TransactionRecord_list
-               }
+AllData = {'行政區': District_list, '土地位置或建物門牌': Adress_list,
+           '交易日期': Date_list, '交易總價(萬元)': TotalPrice_list,
+           '交易單價(萬元/坪)': UnitPrice_List, '單價是否含車位': Garage_list,
+           '建物移轉面積(坪)': BuildingArea_list, '土地移轉面積(坪)': LandArea_list,
+           '建物型態': BuildingType_list, '屋齡': HouseAge_list,
+           '樓層別/總樓層': Floor_list, '交易種類': TransactionalType_list,
+           '備註事項': Note_list, '歷次移轉(含過去移轉資料)': TransactionRecord_list
+           }
+AllData = pd.DataFrame(AllData)
+
+# 保留資料(錯誤資料為爬取失敗資料，需要重新爬取)
+ErrorData = {'行政區': ErrorList_district,
+             '路段': ErrorList_road, '錯誤訊息': ErrorList_msg}
+ErrorData = pd.DataFrame(ErrorData)
 
 
-AllData = pd.DataFrame(ColumnsData)
 driver.quit()
 
 
 # %%
 # 輸出資料
-AllData.to_excel('data.xlsx')
-
-# %%
-print(str(7).zfill(2))
-# %%
+AllData.to_excel('data.xlsx', encoding='cp950', index=False)
